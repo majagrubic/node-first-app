@@ -10,6 +10,8 @@ const Product = require('./models/product');
 const User = require('./models/user');
 const Cart = require('./models/cart');
 const CartItem = require('./models/cart_item');
+const Order = require('./models/order');
+const OrderItem = require('./models/order_item');
 
 const errorController = require('./controllers/error');
 
@@ -40,17 +42,24 @@ Cart.belongsTo(User);
 Cart.belongsToMany(Product, {through: CartItem});
 Product.belongsToMany(Cart, {through: CartItem});
 Cart.hasMany(CartItem);
+Order.belongsTo(User);
+User.hasMany(Order);
+Order.belongsToMany(Product, {through: OrderItem});
 
-sequelize.sync({force: true}).then(result => {
+sequelize.sync().then(result => {
     return User.findByPk(1);
 }).then(user => {
     if (!user) {
         return User.create({ name: 'Maja', email: 'test@test.com'});
     }
     return user;
-}).then(user => {
-    // console.log(user);
-    return user.createCart();
+}).then((user) => {
+    user.getCart().then((cart) => {
+        if (!cart) {
+            return user.createCart();
+        }
+        return cart;
+    });
 }).then(cart => {
     app.listen(3000);
 }).catch(err => {
